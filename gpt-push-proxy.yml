@@ -1,0 +1,46 @@
+name: GPT Push Proxy
+
+on:
+  push:
+    paths:
+      - '.gpt-payloads/**'
+
+jobs:
+  gpt-auto-pr:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Git
+        run: |
+          git config user.name "gpt-bot"
+          git config user.email "gpt-bot@example.com"
+
+      - name: Create branch and commit files
+        run: |
+          BRANCH="feature/gpt-$(date +%s)"
+          mkdir -p .temp-from-gpt
+
+          # extract payload files (simulated structure)
+          cp -r .gpt-payloads/* .temp-from-gpt/
+
+          git checkout -b "$BRANCH"
+          cp -r .temp-from-gpt/* .
+          git add .
+          git commit -m "Auto commit from GPT on $(date)"
+          git push origin "$BRANCH"
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "Auto PR from GPT"
+          title: "GPT Auto PR"
+          body: "Pull Request created from payloads in .gpt-payloads/"
+          base: main
